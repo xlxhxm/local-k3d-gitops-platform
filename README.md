@@ -150,11 +150,11 @@ The following tools must be installed on your workstation before proceeding.
 ## Step 1 — Clone the Repository
 
 ```bash
-git clone https://github.com/<your-username>/k8s-gitops-demo.git
+git clone https://github.com/xlxhxm/local-k3d-gitops-platform.git
 cd k8s-gitops-demo
 ```
 
-> Replace `<your-username>` with your actual GitHub username (or the URL of your hosted repo).
+> Replace `<username>` with your actual GitHub username (or the URL of your hosted repo).
 
 ---
 
@@ -737,7 +737,7 @@ If your Git repository is private, Argo CD needs credentials to pull from it. Th
 ### Option A — Using the Argo CD CLI
 
 ```bash
-argocd repo add https://github.com/<your-username>/k8s-gitops-demo.git \
+argocd repo add https://github.com/xlxhxm/local-k3d-gitops-platform.git \
   --username <your-username> \
   --password <personal-access-token>
 ```
@@ -746,7 +746,7 @@ argocd repo add https://github.com/<your-username>/k8s-gitops-demo.git \
 
 ```bash
 kubectl -n argocd create secret generic repo-creds \
-  --from-literal=url=https://github.com/<your-username>/k8s-gitops-demo.git \
+  --from-literal=url=https://github.com/xlxhxm/local-k3d-gitops-platform.git \
   --from-literal=username=<your-username> \
   --from-literal=password=<personal-access-token>
 
@@ -757,7 +757,7 @@ kubectl -n argocd label secret repo-creds \
 ### Option C — Using SSH
 
 ```bash
-argocd repo add git@github.com:<your-username>/k8s-gitops-demo.git \
+argocd repo add git@github.com:xlxhxm/local-k3d-gitops-platform.git \
   --ssh-private-key-path ~/.ssh/id_ed25519
 ```
 
@@ -813,7 +813,7 @@ kubectl -n argocd logs deploy/argocd-repo-server --tail=50
 argocd repo list
 
 # Check that the URL matches what's in terraform.tfvars
-argocd repo get https://github.com/<your-username>/k8s-gitops-demo.git
+argocd repo get https://github.com/xlxhxm/local-k3d-gitops-platform.git
 
 # Verify the repo server can resolve external DNS
 kubectl -n argocd exec deploy/argocd-repo-server -- \

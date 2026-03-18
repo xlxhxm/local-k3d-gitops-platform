@@ -81,6 +81,12 @@ if ! command -v k3d &>/dev/null; then
   exit 1
 fi
 
+if ! command -v jq &>/dev/null; then
+  err "jq not found in PATH (needed for namespace finalizer cleanup)"
+  err "Install with: brew install jq"
+  exit 1
+fi
+
 if ! cluster_exists; then
   warn "k3d cluster '${CLUSTER_NAME}' not found — nothing to tear down."
   # Still clean Terraform state if directory exists

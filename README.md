@@ -937,6 +937,16 @@ terraform apply
 
 ---
 
+## Authorship and delivery approach
+
+The system architecture, repository structure, separation of concerns, initial Terraform resource design, YAML/GitOps logic, and core technical design decisions were authored by myself.
+
+To accelerate execution, I used personal AI agents to assist with documentation, data population, variable filling, and parts of the setup workflow. These agents were used as productivity tooling, not as a replacement for technical ownership.
+
+All outputs were reviewed twice: first through the agent-assisted workflow, and then through a separate personal verification pass by me. Final technical validation and sign-off were completed personally.
+
+---
+
 ## Technologies Used
 
 | Technology | Version | Role |

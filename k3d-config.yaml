@@ -1,0 +1,35 @@
+# k3d cluster configuration
+# Creates a multi-node cluster: 1 control-plane + 2 worker nodes
+# Usage: k3d cluster create --config k3d-config.yaml
+
+apiVersion: k3d.io/v1alpha5
+kind: Simple
+metadata:
+  name: gitops-cluster
+servers: 1          # 1 control-plane node
+agents: 2           # 2 worker nodes
+
+# Port mappings: expose services on the host
+ports:
+  # Argo CD UI (NodePort 30443 → host 8443)
+  - port: 8443:30443
+    nodeFilters:
+      - loadbalancer
+  # Frontend application (NodePort 30080 → host 8080)
+  - port: 8080:30080
+    nodeFilters:
+      - loadbalancer
+
+# Resource options
+options:
+  k3d:
+    wait: true
+    timeout: "120s"
+  k3s:
+    extraArgs:
+      - arg: "--disable=traefik"
+        nodeFilters:
+          - server:*
+  kubeconfig:
+    updateDefaultKubeconfig: true
+    switchCurrentContext: true

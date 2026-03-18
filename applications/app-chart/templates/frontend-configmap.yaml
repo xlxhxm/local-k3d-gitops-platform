@@ -1,0 +1,29 @@
+{{- if .Values.frontend.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "app-chart.fullname" . }}-frontend
+  labels:
+    {{- include "app-chart.labels" . | nindent 4 }}
+    {{- include "app-chart.frontend.selectorLabels" . | nindent 4 }}
+data:
+  index.html: |
+    {{- .Values.frontend.indexHtml | nindent 4 }}
+  # Nginx config to proxy /api/ to the backend service
+  default.conf: |
+    server {
+        listen 80;
+        server_name _;
+
+        location / {
+            root /usr/share/nginx/html;
+            index index.html;
+        }
+
+        location /api/ {
+            proxy_pass http://{{ include "app-chart.fullname" . }}-backend:{{ .Values.backend.service.port }}/;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+        }
+    }
+{{- end }}

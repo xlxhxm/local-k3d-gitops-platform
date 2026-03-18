@@ -1,0 +1,14 @@
+{{- if .Values.backend.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "app-chart.fullname" . }}-backend-config
+  labels:
+    {{- include "app-chart.labels" . | nindent 4 }}
+    {{- include "app-chart.backend.selectorLabels" . | nindent 4 }}
+data:
+  DB_HOST: "mysql.infrastructure.svc.cluster.local"
+  DB_PORT: "3306"
+  DB_NAME: "appdb"
+  BACKEND_PORT: "{{ .Values.backend.service.targetPort }}"
+{{- end }}

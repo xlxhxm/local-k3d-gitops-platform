@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-backup-pvc
+  namespace: infrastructure
+  labels:
+    app.kubernetes.io/name: mysql-backup
+    app.kubernetes.io/part-of: gitops-demo
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  # Uses the default StorageClass provided by k3d (local-path)

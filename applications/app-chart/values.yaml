@@ -1,0 +1,71 @@
+# ---------------------------------------------------------------------------
+# Frontend configuration (Nginx serving a static page)
+# ---------------------------------------------------------------------------
+frontend:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: nginx
+    tag: "1.25-alpine"
+    pullPolicy: IfNotPresent
+  service:
+    type: NodePort
+    port: 80
+    targetPort: 80
+    nodePort: 30080  # Mapped to host port 8080 via k3d config
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+  # Custom index.html content injected via ConfigMap
+  indexHtml: |
+    <!DOCTYPE html>
+    <html>
+    <head><title>GitOps Demo Frontend</title></head>
+    <body>
+      <h1>GitOps Demo - Frontend</h1>
+      <p>This page is served by Nginx, deployed via Argo CD.</p>
+      <div id="backend-response">
+        <h2>Backend Status:</h2>
+        <pre id="output">Loading...</pre>
+      </div>
+      <script>
+        fetch('/api/')
+          .then(r => r.text())
+          .then(t => document.getElementById('output').textContent = t)
+          .catch(e => document.getElementById('output').textContent = 'Backend unreachable: ' + e);
+      </script>
+    </body>
+    </html>
+
+# ---------------------------------------------------------------------------
+# Backend configuration (http-echo server)
+# ---------------------------------------------------------------------------
+backend:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: hashicorp/http-echo
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 5678
+    targetPort: 5678
+  args:
+    - "-text=Hello from the Backend! Database host: mysql.infrastructure.svc.cluster.local"
+    - "-listen=:5678"
+  resources:
+    requests:
+      cpu: 50m
+      memory: 32Mi
+    limits:
+      cpu: 200m
+      memory: 64Mi
+  env: []
+  # Additional environment variables can be added here:
+  # - name: DB_HOST
+  #   value: mysql.infrastructure.svc.cluster.local

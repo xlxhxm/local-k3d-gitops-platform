@@ -33,22 +33,22 @@ A production-style local Kubernetes environment demonstrating a complete GitOps 
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
 │                      k3d Cluster: "gitops-cluster"                       │
-│                  1 Control-Plane  +  2 Worker Nodes                      │
+│                  1 Control-Plane  +  2 Worker Nodes                       │
 │  ┌────────────────┐  ┌────────────────┐  ┌────────────────┐              │
-│  │ server-0       │  │  agent-0       │  │  agent-1       │              │
-│  │ (control-plane)│  │  (worker)      │  │  (worker)      │              │
+│  │  server-0       │  │  agent-0       │  │  agent-1       │              │
+│  │  (control-plane)│  │  (worker)      │  │  (worker)      │              │
 │  └────────────────┘  └────────────────┘  └────────────────┘              │
 │                                                                          │
-│ ┌────────────────────────────────────────────────────────────────┐       │
-│ │  NAMESPACE: argocd                                             │       │
-│ │                                                                │       │
-│ │  Argo CD Server (NodePort 30443 → host :8443)                  │       │
-│ │  Installed via: Terraform Helm Provider (argo-cd chart v5.55)  │       │
-│ │                                                                │       │
-│ │  Manages two Application CRDs:                                 │       │
-│ │    ├── "infrastructure"  → watches infrastructure/ directory   │       │
-│ │    └── "applications"    → watches applications/app-chart/     │       │
-│ └────────────────────────────────────────────────────────────────┘       │
+│  ┌────────────────────────────────────────────────────────────────┐       │
+│  │  NAMESPACE: argocd                                             │       │
+│  │                                                                │       │
+│  │  Argo CD Server (NodePort 30443 → host :8443)                  │       │
+│  │  Installed via: Terraform Helm Provider (argo-cd chart v5.55)  │       │
+│  │                                                                │       │
+│  │  Manages two Application CRDs:                                 │       │
+│  │    ├── "infrastructure"  → watches infrastructure/ directory   │       │
+│  │    └── "applications"    → watches applications/app-chart/     │       │
+│  └────────────────────────────────────────────────────────────────┘       │
 │                                                                          │
 │  ┌─────────────────────────────┐  ┌──────────────────────────────────┐   │
 │  │  NAMESPACE: applications    │  │  NAMESPACE: infrastructure       │   │
@@ -58,14 +58,14 @@ A production-style local Kubernetes environment demonstrating a complete GitOps 
 │  │    - Serves static HTML     │  │    - Init SQL via ConfigMap      │   │
 │  │    - Proxies /api/ → backend│  │    - Secret-based credentials    │   │
 │  │                             │  │                                  │   │
-│  │  Backend (http-echo)        │  │   Backup CronJob (*/5 min)       │   │
+│  │  Backend (http-echo)        │  │  Backup CronJob (*/5 min)       │   │
 │  │    - 2 replicas             │  │    - mysqldump → timestamped SQL │   │
 │  │    - Responds on :5678      │  │    - PVC: mysql-backup-pvc (5Gi) │   │
 │  └─────────────────────────────┘  └──────────────────────────────────┘   │
 │                                                                          │
 │  Port Mappings (via k3d loadbalancer):                                   │
 │    Host :8443  → NodePort 30443 (Argo CD UI)                             │
-│    Host :8080  → NodePort 30080 (Frontend Application)                   │
+│    Host :8080  → NodePort 30090 (Frontend Application)                   │
 └──────────────────────────────────────────────────────────────────────────┘
 
 Data Flow:
@@ -79,7 +79,7 @@ Terraform performs all deployment in a single `terraform apply`:
 
 1. Creates the `argocd` namespace and installs Argo CD via the official Helm chart.
 2. Waits for the Argo CD server deployment to reach a ready state.
-3. Creates two Argo CD `Application` CRDs using `kubernetes_manifest`:
+3. Creates two Argo CD `Application` CRDs using `kubectl_manifest` (defers CRD validation to apply time):
    - **infrastructure** — recursively syncs the `infrastructure/` directory (MySQL manifests + backup CronJob).
    - **applications** — syncs the `applications/app-chart/` Helm chart (frontend + backend).
 4. Argo CD's automated sync policy (`prune: true`, `selfHeal: true`) keeps the cluster in sync with the Git repository at all times.
@@ -154,13 +154,11 @@ git clone https://github.com/xlxhxm/local-k3d-gitops-platform.git
 cd local-k3d-gitops-platform
 ```
 
-> Replace `<username>` with your actual GitHub username (or the URL of your hosted repo).
-
 ---
 
 ## Step 2 — Create the k3d Cluster
 
-The `k3d-config.yaml` file defines a cluster named `gitops-cluster` with 1 control-plane node and 2 worker nodes. It maps host port `8443` to NodePort `30443` (Argo CD) and host port `8080` to NodePort `30080` (frontend application). Traefik is disabled since we don't need an ingress controller for this demo.
+The `k3d-config.yaml` file defines a cluster named `gitops-cluster` with 1 control-plane node and 2 worker nodes. It maps host port `8443` to NodePort `30443` (Argo CD) and host port `8080` to NodePort `30090` (frontend application). Traefik is disabled since we don't need an ingress controller for this demo.
 
 ```bash
 # Ensure Docker is running
@@ -228,7 +226,7 @@ infrastructure_namespace = "infrastructure"
 applications_namespace   = "applications"
 ```
 
-**Important:** All project files must be committed and pushed to the repository before Argo CD can sync them. Push your code now if you haven't already:
+> **Important:** All project files must be committed and pushed to the repository before Argo CD can sync them. Push your code now if you haven't already:
 > ```bash
 > cd ..
 > git add -A && git commit -m "Initial project setup" && git push origin main
@@ -242,7 +240,7 @@ applications_namespace   = "applications"
 This single command installs Argo CD and configures the two Application CRDs that drive everything else.
 
 ```bash
-# Initialize providers (downloads hashicorp/helm, hashicorp/kubernetes, hashicorp/null)
+# Initialize providers (downloads hashicorp/helm, hashicorp/kubernetes, alekc/kubectl, hashicorp/null)
 terraform init
 
 # Preview what will be created
@@ -260,7 +258,7 @@ terraform apply
    - Server exposed as NodePort on port `30443` (HTTPS with self-signed TLS cert)
    - Controller and repo-server set to 1 replica each (reduced footprint)
 3. Runs a `null_resource` with `local-exec` that executes `kubectl rollout status deployment/argocd-server` to wait until Argo CD is fully ready (up to 300s timeout).
-4. Creates two `kubernetes_manifest` resources for the Argo CD Application CRDs:
+4. Creates two `kubectl_manifest` resources for the Argo CD Application CRDs (using the `alekc/kubectl` provider, which doesn't require CRDs to exist at plan time):
    - **`infrastructure`** — monitors `infrastructure/` with `directory.recurse: true`, automated sync with `prune` and `selfHeal`, and `CreateNamespace=true` + `ServerSideApply=true` sync options.
    - **`applications`** — monitors `applications/app-chart/` as a Helm source with `values.yaml`, automated sync with `prune` and `selfHeal`, and `CreateNamespace=true`.
 
@@ -523,13 +521,13 @@ Expected output:
 
 ```
 NAME                              TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)        AGE
-applications-app-chart-frontend   NodePort    10.43.x.x       <none>        80:30080/TCP   3m
+applications-app-chart-frontend   NodePort    10.43.x.x       <none>        80:30090/TCP   3m
 applications-app-chart-backend    ClusterIP   10.43.x.x       <none>        5678/TCP       3m
 ```
 
 ### 7.2 — Test the Frontend
 
-The frontend is exposed as a NodePort (30080), which k3d maps to host port 8080. You can access it directly:
+The frontend is exposed as a NodePort (30090), which k3d maps to host port 8080. You can access it directly:
 
 ```bash
 # Access the frontend via the k3d port mapping (no port-forward needed)
@@ -664,7 +662,7 @@ The custom Helm chart at `applications/app-chart/` manages both the frontend and
 | `frontend.service.type` | Kubernetes Service type | `NodePort` |
 | `frontend.service.port` | Service port | `80` |
 | `frontend.service.targetPort` | Container port | `80` |
-| `frontend.service.nodePort` | NodePort (when type is NodePort) | `30080` |
+| `frontend.service.nodePort` | NodePort (when type is NodePort) | `30090` |
 | `frontend.resources.requests.cpu` | CPU request | `50m` |
 | `frontend.resources.requests.memory` | Memory request | `64Mi` |
 | `frontend.resources.limits.cpu` | CPU limit | `200m` |
@@ -715,8 +713,8 @@ All Terraform variables are defined in `terraform/variables.tf` with sensible de
 | `kubernetes_namespace.argocd` | Namespace | Houses all Argo CD components |
 | `helm_release.argocd` | Helm Release | Installs Argo CD from official chart |
 | `null_resource.wait_for_argocd` | Null (local-exec) | Waits for argocd-server rollout |
-| `kubernetes_manifest.argocd_app_infrastructure` | Argo CD Application | Syncs `infrastructure/` directory |
-| `kubernetes_manifest.argocd_app_applications` | Argo CD Application | Syncs `applications/app-chart/` Helm chart |
+| `kubectl_manifest.argocd_app_infrastructure` | Argo CD Application | Syncs `infrastructure/` directory |
+| `kubectl_manifest.argocd_app_applications` | Argo CD Application | Syncs `applications/app-chart/` Helm chart |
 
 ### Terraform Outputs
 
@@ -738,7 +736,7 @@ If your Git repository is private, Argo CD needs credentials to pull from it. Th
 
 ```bash
 argocd repo add https://github.com/xlxhxm/local-k3d-gitops-platform.git \
-  --username xlxhxm \
+  --username <your-github-username> \
   --password <personal-access-token>
 ```
 
@@ -747,7 +745,7 @@ argocd repo add https://github.com/xlxhxm/local-k3d-gitops-platform.git \
 ```bash
 kubectl -n argocd create secret generic repo-creds \
   --from-literal=url=https://github.com/xlxhxm/local-k3d-gitops-platform.git \
-  --from-literal=username=xlxhxm \
+  --from-literal=username=<your-github-username> \
   --from-literal=password=<personal-access-token>
 
 kubectl -n argocd label secret repo-creds \
@@ -767,7 +765,28 @@ argocd repo add git@github.com:xlxhxm/local-k3d-gitops-platform.git \
 
 ## Cleanup
 
-Remove everything in reverse order:
+### Recommended: Use the destroy script
+
+The included `scripts/destroy.sh` handles Argo CD CRD finalizers, stuck namespaces, and Terraform state cleanup automatically — no more hanging `terraform destroy`:
+
+```bash
+# Full teardown (Terraform + k3d cluster)
+./scripts/destroy.sh
+
+# Terraform only — keep the k3d cluster running
+./scripts/destroy.sh --keep-cluster
+```
+
+The script performs these steps in order:
+
+1. Gracefully deletes Argo CD Application CRDs
+2. Strips finalizers from any stuck Argo CD resources
+3. Removes Argo CD CRDs to unblock namespace deletion
+4. Force-clears any Terminating namespaces
+5. Runs `terraform destroy`
+6. Deletes the k3d cluster (unless `--keep-cluster`)
+
+### Manual cleanup (alternative)
 
 ```bash
 # Step 1: Destroy Terraform-managed resources (Argo CD + Application CRDs)
@@ -783,7 +802,11 @@ docker ps                      # Should show no k3d-related containers
 kubectl config get-contexts    # "k3d-gitops-cluster" should be gone
 ```
 
-> **Note:** Step 2 is sufficient to remove everything since k3d runs entirely in Docker containers. The `terraform destroy` in Step 1 is included for completeness and is useful if you want to remove Argo CD while keeping the cluster.
+> **Note:** If `terraform destroy` hangs, it's likely due to Argo CD CRD finalizers preventing namespace deletion. Use `scripts/destroy.sh` instead, or manually remove finalizers with:
+> ```bash
+> kubectl -n argocd patch applications.argoproj.io --all --type=json \
+>   -p='[{"op":"remove","path":"/metadata/finalizers"}]'
+> ```
 
 ---
 
@@ -858,7 +881,7 @@ kubectl -n infrastructure logs job/manual-backup-test -f
 ### Frontend Not Reachable at localhost:8080
 
 ```bash
-# Verify the frontend service is NodePort with port 30080
+# Verify the frontend service is NodePort with port 30090
 kubectl -n applications get svc applications-app-chart-frontend
 
 # Verify k3d is mapping the port correctly
@@ -901,26 +924,16 @@ terraform apply
 | Decision | Rationale |
 |----------|-----------|
 | **Single Helm chart** for frontend + backend | Simplifies release management; both components share lifecycle and can be enabled/disabled via `values.yaml` |
-| **Terraform `kubernetes_manifest`** for Argo CD Apps | Avoids dependency on third-party Argo CD Terraform provider; uses the official Kubernetes provider |
+| **`alekc/kubectl` provider** for Argo CD Apps | The `kubernetes_manifest` resource validates CRDs at plan time, which fails before Argo CD is installed. `kubectl_manifest` defers validation to apply time, solving the chicken-and-egg problem |
 | **Raw manifests** for MySQL (not a Helm subchart) | Argo CD syncs the `infrastructure/` directory recursively; raw manifests give full control and are simpler to inspect |
 | **`mysql:8.0` image** for both database and CronJob | The backup CronJob uses the same image as the database, which already includes `mysqldump` — no separate client image needed |
 | **Recreate deployment strategy** for MySQL | Required because the PVC uses `ReadWriteOnce` access mode — only one pod can mount it at a time |
 | **`ServerSideApply=true`** for infrastructure app | Avoids field-ownership conflicts when Argo CD applies manifests that may overlap with other controllers |
 | **`fullnameOverride: argocd`** in Helm release | Ensures predictable resource names (`argocd-server`, `argocd-repo-server`) instead of auto-generated `argocd-argo-cd-*` names |
 | **Argo CD with self-signed TLS** (no insecure mode) | Serves HTTPS on NodePort 30443; avoids port-mapping issues that arise when insecure mode disables the HTTPS listener |
-| **Frontend as NodePort (30080)** | Mapped via k3d to host port 8080 for direct browser access without requiring port-forward |
+| **Frontend as NodePort (30090)** | Mapped via k3d to host port 8080 for direct browser access without requiring port-forward |
 | **Traefik disabled** in k3d config | Not needed for this demo; services are accessed via NodePort |
 | **`null_resource` with `local-exec`** for readiness | Ensures Argo CD is fully operational before Terraform creates Application CRDs, preventing race conditions |
-
----
-
-## Authorship and delivery approach
-
-The system architecture, repository structure, separation of concerns, initial Terraform resource design, YAML/GitOps logic, and core technical design decisions were authored by myself.
-
-To accelerate execution, I used personal AI agents to assist with documentation, data population, variable filling, and parts of the setup workflow. These agents were used as productivity tooling, not as a replacement for technical ownership.
-
-All outputs and were reviewed twice: first through the agent-assisted workflow, and then through a separate personal verification pass by me. Final technical validation and sign-off were completed personally.
 
 ---
 

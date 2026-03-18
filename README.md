@@ -33,22 +33,22 @@ A production-style local Kubernetes environment demonstrating a complete GitOps 
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
 │                      k3d Cluster: "gitops-cluster"                       │
-│                  1 Control-Plane  +  2 Worker Nodes                      │
+│                  1 Control-Plane  +  2 Worker Nodes                       │
 │  ┌────────────────┐  ┌────────────────┐  ┌────────────────┐              │
-│  │ server-0       │  │  agent-0       │  │  agent-1       │              │
-│  │ (control-plane)│  │  (worker)      │  │  (worker)      │              │
+│  │  server-0       │  │  agent-0       │  │  agent-1       │              │
+│  │  (control-plane)│  │  (worker)      │  │  (worker)      │              │
 │  └────────────────┘  └────────────────┘  └────────────────┘              │
 │                                                                          │
-│ ┌────────────────────────────────────────────────────────────────┐       │
-│ │  NAMESPACE: argocd                                             │       │
-│ │                                                                │       │
-│ │  Argo CD Server (NodePort 30443 → host :8443)                  │       │
-│ │  Installed via: Terraform Helm Provider (argo-cd chart v5.55)  │       │
-│ │                                                                │       │
-│ │  Manages two Application CRDs:                                 │       │
-│ │    ├── "infrastructure"  → watches infrastructure/ directory   │       │
-│ │    └── "applications"    → watches applications/app-chart/     │       │
-│ └────────────────────────────────────────────────────────────────┘       │
+│  ┌────────────────────────────────────────────────────────────────┐       │
+│  │  NAMESPACE: argocd                                             │       │
+│  │                                                                │       │
+│  │  Argo CD Server (NodePort 30443 → host :8443)                  │       │
+│  │  Installed via: Terraform Helm Provider (argo-cd chart v5.55)  │       │
+│  │                                                                │       │
+│  │  Manages two Application CRDs:                                 │       │
+│  │    ├── "infrastructure"  → watches infrastructure/ directory   │       │
+│  │    └── "applications"    → watches applications/app-chart/     │       │
+│  └────────────────────────────────────────────────────────────────┘       │
 │                                                                          │
 │  ┌─────────────────────────────┐  ┌──────────────────────────────────┐   │
 │  │  NAMESPACE: applications    │  │  NAMESPACE: infrastructure       │   │
@@ -58,7 +58,7 @@ A production-style local Kubernetes environment demonstrating a complete GitOps 
 │  │    - Serves static HTML     │  │    - Init SQL via ConfigMap      │   │
 │  │    - Proxies /api/ → backend│  │    - Secret-based credentials    │   │
 │  │                             │  │                                  │   │
-│  │  Backend (http-echo)        │  │   Backup CronJob (*/5 min)       │   │
+│  │  Backend (http-echo)        │  │  Backup CronJob (*/5 min)       │   │
 │  │    - 2 replicas             │  │    - mysqldump → timestamped SQL │   │
 │  │    - Responds on :5678      │  │    - PVC: mysql-backup-pvc (5Gi) │   │
 │  └─────────────────────────────┘  └──────────────────────────────────┘   │
@@ -98,6 +98,7 @@ The following tools must be installed on your workstation before proceeding.
 | **Terraform** | >= 1.5.0 | Infrastructure-as-code | `brew install terraform` or [terraform.io](https://developer.hashicorp.com/terraform/install) |
 | **Helm** | 3.x | Kubernetes package manager | `brew install helm` |
 | **Git** | 2.x | Version control | `brew install git` |
+| **jq** | 1.6+ | JSON processing (used by destroy script) | `brew install jq` |
 
 > **Docker must be running** before you create the k3d cluster. Verify with `docker info`.
 
@@ -111,6 +112,9 @@ The following tools must be installed on your workstation before proceeding.
 ├── README.md                                # This file — full deployment guide
 ├── k3d-config.yaml                          # k3d cluster definition
 ├── .gitignore                               # Ignores .terraform/, state files, IDE configs
+│
+├── scripts/
+│   └── destroy.sh                           # Clean teardown script (handles CRD finalizers)
 │
 ├── terraform/                               # All Terraform code
 │   ├── main.tf                              # Providers, argocd namespace, Helm release
@@ -127,7 +131,7 @@ The following tools must be installed on your workstation before proceeding.
 │           ├── _helpers.tpl                 # Template helpers (name, labels, selectors)
 │           ├── frontend-configmap.yaml      # index.html + Nginx default.conf
 │           ├── frontend-deployment.yaml     # Nginx Deployment with ConfigMap mounts
-│           ├── frontend-service.yaml        # ClusterIP Service on port 80
+│           ├── frontend-service.yaml        # NodePort Service on port 80 (nodePort 30090)
 │           ├── backend-configmap.yaml       # Database connection settings
 │           ├── backend-deployment.yaml      # http-echo Deployment with configurable args
 │           └── backend-service.yaml         # ClusterIP Service on port 5678
@@ -924,7 +928,7 @@ terraform apply
 | Decision | Rationale |
 |----------|-----------|
 | **Single Helm chart** for frontend + backend | Simplifies release management; both components share lifecycle and can be enabled/disabled via `values.yaml` |
-| **`alekc/kubectl` provider** for Argo CD Apps | The `kubernetes_manifest` resource validates CRDs at plan time, which fails before Argo CD is installed. `kubectl_manifest` defers validation to apply time, solving the chicken-and-egg problem |
+| **`alekc/kubectl` provider** for Argo CD Apps | The `kubernetes_manifest` resource (from `hashicorp/kubernetes`) validates CRDs at plan time, which fails before Argo CD is installed. `kubectl_manifest` (from `alekc/kubectl`) defers validation to apply time, solving the chicken-and-egg problem |
 | **Raw manifests** for MySQL (not a Helm subchart) | Argo CD syncs the `infrastructure/` directory recursively; raw manifests give full control and are simpler to inspect |
 | **`mysql:8.0` image** for both database and CronJob | The backup CronJob uses the same image as the database, which already includes `mysqldump` — no separate client image needed |
 | **Recreate deployment strategy** for MySQL | Required because the PVC uses `ReadWriteOnce` access mode — only one pod can mount it at a time |

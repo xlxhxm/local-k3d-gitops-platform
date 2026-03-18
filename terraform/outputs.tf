@@ -14,7 +14,8 @@ output "argocd_server_url" {
 
 output "argocd_initial_password_command" {
   description = "Command to retrieve the initial Argo CD admin password"
-  value       = "kubectl -n ${var.argocd_namespace} get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d"
+  value       = "kubectl -n argocd get secret argocd-initial-admin-secret \
+  -o jsonpath='{.data.password}' | base64 -d && echo"
 }
 
 output "infrastructure_app" {

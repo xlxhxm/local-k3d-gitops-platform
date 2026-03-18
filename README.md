@@ -151,7 +151,7 @@ The following tools must be installed on your workstation before proceeding.
 
 ```bash
 git clone https://github.com/xlxhxm/local-k3d-gitops-platform.git
-cd k8s-gitops-demo
+cd local-k3d-gitops-platform
 ```
 
 > Replace `<username>` with your actual GitHub username (or the URL of your hosted repo).
@@ -221,7 +221,7 @@ argocd_chart_version = "5.55.0"
 argocd_nodeport      = "30443"
 
 # >>>  CHANGE THIS to your actual repository URL  <<<
-git_repo_url         = "https://github.com/<your-username>/k8s-gitops-demo.git"
+git_repo_url         = "https://github.com/xlxhxm/local-k3d-gitops-platform.git"
 git_target_revision  = "main"
 
 infrastructure_namespace = "infrastructure"
@@ -738,7 +738,7 @@ If your Git repository is private, Argo CD needs credentials to pull from it. Th
 
 ```bash
 argocd repo add https://github.com/xlxhxm/local-k3d-gitops-platform.git \
-  --username <your-username> \
+  --username xlxhxm \
   --password <personal-access-token>
 ```
 
@@ -747,7 +747,7 @@ argocd repo add https://github.com/xlxhxm/local-k3d-gitops-platform.git \
 ```bash
 kubectl -n argocd create secret generic repo-creds \
   --from-literal=url=https://github.com/xlxhxm/local-k3d-gitops-platform.git \
-  --from-literal=username=<your-username> \
+  --from-literal=username=xlxhxm \
   --from-literal=password=<personal-access-token>
 
 kubectl -n argocd label secret repo-creds \

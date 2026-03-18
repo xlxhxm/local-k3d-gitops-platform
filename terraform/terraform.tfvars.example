@@ -9,7 +9,7 @@ argocd_chart_version = "5.55.0"
 argocd_nodeport      = "30443"
 
 # IMPORTANT: Update this to your actual Git repository URL
-git_repo_url         = "https://github.com/<your-username>/k8s-gitops-demo.git"
+git_repo_url         = "https://github.com/xlxhxm/local-k3d-gitops-platform.git"
 git_target_revision  = "main"
 
 infrastructure_namespace = "infrastructure"

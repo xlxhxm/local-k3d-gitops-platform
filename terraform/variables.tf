@@ -43,7 +43,7 @@ variable "argocd_nodeport" {
 variable "git_repo_url" {
   description = "URL of the Git repository containing manifests"
   type        = string
-  default     = "https://github.com/<your-username>/k8s-gitops-demo.git"
+  default     = "https://github.com/xlxhxm/local-k3d-gitops-platform.git"
 }
 
 variable "git_target_revision" {

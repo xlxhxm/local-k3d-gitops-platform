@@ -12,7 +12,7 @@ frontend:
     type: NodePort
     port: 80
     targetPort: 80
-    nodePort: 30080  # Mapped to host port 8080 via k3d config
+    nodePort: 30090  # Mapped to host port 8080 via k3d config
   resources:
     requests:
       cpu: 50m

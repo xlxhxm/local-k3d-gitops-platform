@@ -91,14 +91,14 @@ Terraform performs all deployment in a single `terraform apply`:
 The following tools must be installed on your workstation before proceeding.
 
 | Tool | Minimum Version | Purpose | Installation |
-|------|-----------------|---------|-------------|
-| Docker | 20.10+ | Container runtime for k3d | Use the official Docker installation method for your operating system |
-| k3d | v5.x | Runs K3s (lightweight Kubernetes) in Docker | Use the official k3d installation instructions for your operating system |
-| kubectl | 1.27+ | Kubernetes CLI | Use the official Kubernetes installation instructions for your operating system |
-| Terraform | >= 1.5.0 | Infrastructure-as-code | Use the official HashiCorp installation instructions for your operating system |
-| Helm | 3.x | Kubernetes package manager | Use the official Helm installation instructions for your operating system |
-| Git | 2.x | Version control | Use your operating system’s package manager or the official Git installer |
-| jq | 1.6+ | JSON processing (used by destroy script) | Use your operating system’s package manager or the official jq installer |
+|------|------------------|---------|-------------|
+| Docker | 20.10+ | Container runtime for k3d | [Docker installation guide](https://docs.docker.com/get-docker/) |
+| k3d | v5.x | Runs K3s (lightweight Kubernetes) in Docker | [k3d installation guide](https://k3d.io/#installation) |
+| kubectl | 1.27+ | Kubernetes CLI | [kubectl installation guide](https://kubernetes.io/docs/tasks/tools/) |
+| Terraform | >= 1.5.0 | Infrastructure-as-code | [Terraform installation guide](https://developer.hashicorp.com/terraform/install) |
+| Helm | 3.x | Kubernetes package manager | [Helm installation guide](https://helm.sh/docs/intro/install/) |
+| Git | 2.x | Version control | [Git download and install](https://git-scm.com/downloads) |
+| jq | 1.6+ | JSON processing (used by destroy script) | [jq download and install](https://jqlang.org/download/) |
 
 > **Docker must be running** before you create the k3d cluster. Verify with `docker info`.
 

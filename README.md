@@ -35,8 +35,8 @@ A production-style local Kubernetes environment demonstrating a complete GitOps 
 │                      k3d Cluster: "gitops-cluster"                       │
 │                  1 Control-Plane  +  2 Worker Nodes                      │
 │  ┌────────────────┐  ┌────────────────┐  ┌────────────────┐              │
-│  │  server-0       │  │  agent-0       │  │  agent-1       │             │
-│  │  (control-plane)│  │  (worker)      │  │  (worker)      │             │
+│  │ server-0       │  │  agent-0       │  │  agent-1       │              │
+│  │ (control-plane)│  │  (worker)      │  │  (worker)      │              │
 │  └────────────────┘  └────────────────┘  └────────────────┘              │
 │                                                                          │
 │ ┌────────────────────────────────────────────────────────────────┐       │
@@ -92,13 +92,13 @@ The following tools must be installed on your workstation before proceeding.
 
 | Tool | Minimum Version | Purpose | Installation |
 |------|-----------------|---------|-------------|
-| **Docker** | 20.10+ | Container runtime for k3d | [docs.docker.com/get-docker](https://docs.docker.com/get-docker/) |
-| **k3d** | v5.x | Runs K3s (lightweight Kubernetes) in Docker | `brew install k3d` or [k3d.io](https://k3d.io/#installation) |
-| **kubectl** | 1.27+ | Kubernetes CLI | `brew install kubectl` |
-| **Terraform** | >= 1.5.0 | Infrastructure-as-code | `brew install terraform` or [terraform.io](https://developer.hashicorp.com/terraform/install) |
-| **Helm** | 3.x | Kubernetes package manager | `brew install helm` |
-| **Git** | 2.x | Version control | `brew install git` |
-| **jq** | 1.6+ | JSON processing (used by destroy script) | `brew install jq` |
+| Docker | 20.10+ | Container runtime for k3d | Use the official Docker installation method for your operating system |
+| k3d | v5.x | Runs K3s (lightweight Kubernetes) in Docker | Use the official k3d installation instructions for your operating system |
+| kubectl | 1.27+ | Kubernetes CLI | Use the official Kubernetes installation instructions for your operating system |
+| Terraform | >= 1.5.0 | Infrastructure-as-code | Use the official HashiCorp installation instructions for your operating system |
+| Helm | 3.x | Kubernetes package manager | Use the official Helm installation instructions for your operating system |
+| Git | 2.x | Version control | Use your operating system’s package manager or the official Git installer |
+| jq | 1.6+ | JSON processing (used by destroy script) | Use your operating system’s package manager or the official jq installer |
 
 > **Docker must be running** before you create the k3d cluster. Verify with `docker info`.
 
